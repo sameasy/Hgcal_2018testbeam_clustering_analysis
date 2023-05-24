@@ -1,0 +1,13 @@
+#runList = ../files-single.txt
+#datatype = data
+#tag = v2
+outputFileDirectory = /grid_mnt/data_cms_upgrade/cuisset/testbeam18/clue3d/$(tag)/
+
+outputFileName = $(outputFileDirectory)/$(ClueParamFolder)/$(datatype)/CLUE_clusters.root
+
+include : runclustering_single.submit_file
+
+# dc rhic outlierDeltaFactor densitySiblingLayers
+queue ClueParamFolder, clueParams from (
+    cmssw, $(params)
+)

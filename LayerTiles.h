@@ -8,11 +8,17 @@
 
 #include "LayerTilesConstants.h"
 
+/**
+ * 2D layer of tiles, implementing binning
+ * \tparam TilesConstants can be LayerTilesConstants (for CLUE3D) or TilesConstants (for CLUE)
+*/
+template<typename TilesConstantsT>
 class LayerTiles {
  public:
+ typedef TilesConstantsT TilesConstants;
   LayerTiles() {
-    layerTiles_.resize(LayerTilesConstants::nColumns *
-                       LayerTilesConstants::nRows);
+    layerTiles_.resize(TilesConstants::nColumns *
+                       TilesConstants::nRows);
   }
 
   void fill(const std::vector<float>& x, const std::vector<float>& y) {
@@ -22,38 +28,41 @@ class LayerTiles {
     }
   }
 
+  ///< Add to the bin corresponding to coordinates (x;y) the index of hit i
   void fill(float x, float y, int i) {
     layerTiles_[getGlobalBin(x, y)].push_back(i);
   }
 
   int getXBin(float x) const {
     constexpr float xRange =
-        LayerTilesConstants::maxX - LayerTilesConstants::minX;
+        TilesConstants::maxX - TilesConstants::minX;
     static_assert(xRange >= 0.);
-    int xBin = (x - LayerTilesConstants::minX) * LayerTilesConstants::rX;
-    xBin = std::min(xBin, LayerTilesConstants::nColumns - 1);
+    int xBin = (x - TilesConstants::minX) * TilesConstants::rX;
+    xBin = std::min(xBin, TilesConstants::nColumns - 1);
     xBin = std::max(xBin, 0);
     return xBin;
   }
 
   int getYBin(float y) const {
     constexpr float yRange =
-        LayerTilesConstants::maxY - LayerTilesConstants::minY;
+        TilesConstants::maxY - TilesConstants::minY;
     static_assert(yRange >= 0.);
-    int yBin = (y - LayerTilesConstants::minY) * LayerTilesConstants::rY;
-    yBin = std::min(yBin, LayerTilesConstants::nRows - 1);
+    int yBin = (y - TilesConstants::minY) * TilesConstants::rY;
+    yBin = std::min(yBin, TilesConstants::nRows - 1);
     yBin = std::max(yBin, 0);
     return yBin;
   }
 
   int getGlobalBin(float x, float y) const {
-    return getXBin(x) + getYBin(y) * LayerTilesConstants::nColumns;
+    return getXBin(x) + getYBin(y) * TilesConstants::nColumns;
   }
 
+  ///< Map bin (x;y) coordinates to internal global bin number
   int getGlobalBinByBin(int xBin, int yBin) const {
-    return xBin + yBin * LayerTilesConstants::nColumns;
+    return xBin + yBin * TilesConstants::nColumns;
   }
 
+  ///< Get box in bin numbers from box in space coordinates
   std::array<int, 4> searchBox(float xMin, float xMax, float yMin, float yMax) {
     int xBinMin = getXBin(xMin);
     int xBinMax = getXBin(xMax);
@@ -73,7 +82,14 @@ class LayerTiles {
   }
 
  private:
+  /**
+   * Outer vector : indexed by global bin number
+   * Inner vector : list of hit ID in bin
+  */
   std::vector<std::vector<int>> layerTiles_;
 };
+
+using LayerTilesClue = LayerTiles<LayerTilesConstantsClue>;
+using LayerTilesClue3D = LayerTiles<LayerTilesConstantsClue3D>;
 
 #endif  // LayerTiles_h
